@@ -1,5 +1,5 @@
 {
-  "name": "edubridge-frontend",
+  "name": "edubridge",
   "builds": [
     {
       "src": "frontend/package.json",
