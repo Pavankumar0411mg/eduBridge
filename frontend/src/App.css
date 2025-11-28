@@ -359,6 +359,60 @@
   scrollbar-width: none;
 }
 
+/* Chatbot Animations */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes bounce {
+  0%, 80%, 100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(102, 126, 234, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(102, 126, 234, 0);
+  }
+}
+
+/* Chatbot specific styles */
+.chatbot-button {
+  animation: pulse 2s infinite;
+}
+
+.chatbot-window {
+  animation: slideUp 0.3s ease-out;
+}
+
+.typing-indicator {
+  animation: bounce 1.4s infinite ease-in-out;
+}
+
+.typing-indicator:nth-child(2) {
+  animation-delay: 0.16s;
+}
+
+.typing-indicator:nth-child(3) {
+  animation-delay: 0.32s;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .header {
@@ -385,5 +439,12 @@
 
   .login-card {
     padding: 30px 20px;
+  }
+
+  /* Chatbot responsive */
+  .chatbot-window {
+    width: 95vw !important;
+    height: 70vh !important;
+    right: 2.5vw !important;
   }
 }
