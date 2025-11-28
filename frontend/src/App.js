@@ -68,7 +68,7 @@ function App() {
           paddingTop: user ? '60px' : '0'
         }}>
           <Routes>
-          <Route path="/" element={<Home user={user} />} />
+          <Route path="/" element={user ? <Dashboard user={user} /> : <Home user={user} />} />
           <Route 
             path="/login" 
             element={!user ? <Login onLogin={handleLogin} /> : <Navigate to="/dashboard" />} 
@@ -79,7 +79,7 @@ function App() {
           />
           <Route 
             path="/dashboard" 
-            element={user ? <Dashboard user={user} /> : <Navigate to="/" />} 
+            element={user ? <Navigate to="/" /> : <Navigate to="/" />} 
           />
           <Route 
             path="/materials" 
