@@ -1,29 +1,56 @@
 # Dependencies
 node_modules/
 npm-debug.log*
-
-# Production builds
-frontend/build/
-backend/dist/
+yarn-debug.log*
+yarn-error.log*
 
 # Environment variables
 .env
 .env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Build outputs
+build/
+dist/
 
 # Database
 *.db
 *.sqlite
 
-# Uploads (optional - remove if you want to include sample files)
-backend/uploads/
+# Uploads (if you don't want to track uploaded files)
+backend/uploads/*
+!backend/uploads/.gitkeep
 
 # IDE files
 .vscode/
 .idea/
+*.swp
+*.swo
 
-# OS files
+# OS generated files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 
 # Logs
+logs
 *.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+
+# Temporary folders
+tmp/
+temp/
