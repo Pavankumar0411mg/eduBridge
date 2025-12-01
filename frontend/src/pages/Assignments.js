@@ -17,7 +17,9 @@ const Assignments = ({ user }) => {
   const fetchAssignments = async () => {
     try {
       const token = localStorage.getItem('token');
-      const endpoint = user.role === 'Teacher' ? '/api/assignments/teacher' : '/api/assignments/student';
+      const endpoint = user.role === 'Teacher' 
+        ? 'http://localhost:5000/api/assignments/teacher' 
+        : 'http://localhost:5000/api/assignments/student';
       
       const response = await axios.get(endpoint, {
         headers: { Authorization: `Bearer ${token}` }
@@ -45,7 +47,7 @@ const Assignments = ({ user }) => {
       const formData = new FormData();
       formData.append('submissionFile', submissionFile[assignmentId]);
 
-      await axios.post(`/api/assignments/submit/${assignmentId}`, formData, {
+      const response = await axios.post(`http://localhost:5000/api/assignments/submit/${assignmentId}`, formData, {
         headers: { 
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
@@ -55,20 +57,24 @@ const Assignments = ({ user }) => {
       alert('Assignment submitted successfully!');
       fetchAssignments();
     } catch (error) {
-      alert('Error submitting assignment: ' + (error.response?.data?.message || 'Unknown error'));
+      console.error('Submission error:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Network error';
+      alert('Error submitting assignment: ' + errorMessage);
     }
   };
 
   const viewSubmissions = async (assignmentId) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`/api/assignments/${assignmentId}/submissions`, {
+      const response = await axios.get(`http://localhost:5000/api/assignments/${assignmentId}/submissions`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setSubmissions(response.data);
       setSelectedAssignment(assignmentId);
     } catch (error) {
-      alert('Error fetching submissions: ' + (error.response?.data?.message || 'Unknown error'));
+      console.error('Submissions error:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Network error';
+      alert('Error fetching submissions: ' + errorMessage);
     }
   };
 
@@ -77,7 +83,7 @@ const Assignments = ({ user }) => {
       const token = localStorage.getItem('token');
       const { grade, feedback } = grading[submissionId] || {};
       
-      await axios.put(`/api/assignments/grade/${submissionId}`, { grade, feedback }, {
+      await axios.put(`http://localhost:5000/api/assignments/grade/${submissionId}`, { grade, feedback }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -238,13 +244,13 @@ const Assignments = ({ user }) => {
                   Download Assignment
                 </a>
                 
-                {user.role === 'Teacher' && assignment.submissions_count > 0 && (
+                {user.role === 'Teacher' && (
                   <button
                     onClick={() => viewSubmissions(assignment.id)}
                     className="btn btn-secondary"
                     style={{ marginLeft: '10px' }}
                   >
-                    View Submissions ({assignment.submissions_count})
+                    View Submissions ({assignment.submissions_count || 0})
                   </button>
                 )}
 
@@ -253,10 +259,16 @@ const Assignments = ({ user }) => {
                     {assignment.submission_id ? (
                       <div className="submission-status">
                         <span style={{ color: 'green', fontWeight: 'bold' }}>
-                          ✓ Submitted on {formatDate(assignment.submitted_at)}
+                          ✓ Completed Assignment
                         </span>
+                        <p style={{ fontSize: '12px', color: '#666' }}>Submitted on {formatDate(assignment.submitted_at)}</p>
                         {assignment.grade_received && (
-                          <p><strong>Grade:</strong> {assignment.grade_received}</p>
+                          <div>
+                            <p><strong>Grade:</strong> {assignment.grade_received}/100</p>
+                            {assignment.feedback && (
+                              <p><strong>Feedback:</strong> {assignment.feedback}</p>
+                            )}
+                          </div>
                         )}
                       </div>
                     ) : (

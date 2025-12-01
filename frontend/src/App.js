@@ -18,6 +18,7 @@ import DiscussionForum from './pages/DiscussionForum';
 import StudentProgress from './pages/StudentProgress';
 import CreateAssignment from './pages/CreateAssignment';
 import Assignments from './pages/Assignments';
+import AssignmentGrades from './pages/AssignmentGrades';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import Chatbot from './components/Chatbot';
@@ -136,6 +137,10 @@ function App() {
           <Route 
             path="/assignments" 
             element={user ? <Assignments user={user} /> : <Navigate to="/" />} 
+          />
+          <Route 
+            path="/assignment-grades" 
+            element={user && user.role === 'Student' ? <AssignmentGrades user={user} /> : <Navigate to="/" />} 
           />
           </Routes>
         </div>

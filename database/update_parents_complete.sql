@@ -94,3 +94,26 @@ INSERT IGNORE INTO Users (username, email, password, role, full_name) VALUES
 ('parent_student90', 'student90.parent@gmail.com', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Parent', 'Parent of Seema Tiwari'),
 ('parent_newstudent123', 'newstudent123.parent@gmail.com', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Parent', 'Parent of New Student'),
 ('parent_student123', 'student123.parent@gmail.com', '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Parent', 'Parent of pavan');
+
+-- Create StudentParents table if not exists
+CREATE TABLE IF NOT EXISTS StudentParents (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    student_id INT NOT NULL,
+    parent_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (student_id) REFERENCES Users(id) ON DELETE CASCADE,
+    FOREIGN KEY (parent_id) REFERENCES Users(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_student_parent (student_id, parent_id)
+);
+
+-- Connect all students with their parents
+INSERT IGNORE INTO StudentParents (student_id, parent_id) 
+SELECT 
+    s.id as student_id,
+    p.id as parent_id
+FROM Users s
+JOIN Users p ON p.username = CONCAT('parent_', s.username)
+WHERE s.role = 'Student' 
+AND p.role = 'Parent';
+
+SELECT 'All parents created and connected to students successfully!' as message;

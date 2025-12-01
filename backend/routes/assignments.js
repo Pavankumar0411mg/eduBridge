@@ -92,16 +92,30 @@ router.get('/test', authenticateToken, async (req, res) => {
   }
 });
 
-// Get assignments for students
+// Get assignments for students with submission status
 router.get('/student', authenticateToken, async (req, res) => {
   try {
-    const [student] = await db.execute('SELECT grade, stream_id FROM Users WHERE id = ?', [req.user.id]);
+    const studentId = req.user.id;
+    const [student] = await db.execute('SELECT grade, stream_id FROM Users WHERE id = ?', [studentId]);
     if (student.length === 0) {
       return res.json([]);
     }
     
     const { grade, stream_id } = student[0];
-    const [assignments] = await db.execute('SELECT * FROM Assignments WHERE grade = ? AND stream_id = ?', [grade, stream_id]);
+    const [assignments] = await db.execute(`
+      SELECT 
+        a.*,
+        s.name as subject_name,
+        asub.id as submission_id,
+        asub.submitted_at,
+        asub.grade_received,
+        asub.feedback
+      FROM Assignments a
+      JOIN Subjects s ON a.subject_id = s.id
+      LEFT JOIN AssignmentSubmissions asub ON a.id = asub.assignment_id AND asub.student_id = ?
+      WHERE a.grade = ? AND a.stream_id = ?
+      ORDER BY a.created_at DESC
+    `, [studentId, grade, stream_id]);
     
     res.json(assignments);
   } catch (error) {
@@ -109,11 +123,80 @@ router.get('/student', authenticateToken, async (req, res) => {
   }
 });
 
-// Submit assignment (Student only)
-router.post('/submit/:assignmentId', authenticateToken, async (req, res) => {
+// Test submission route
+router.post('/test-submit/:assignmentId', authenticateToken, async (req, res) => {
   try {
+    res.json({ 
+      message: 'Test route working', 
+      user: req.user, 
+      assignmentId: req.params.assignmentId 
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Test error', error: error.message });
+  }
+});
+
+// Submit assignment (Student only)
+router.post('/submit/:assignmentId', authenticateToken, upload.single('submissionFile'), async (req, res) => {
+  try {
+    const { assignmentId } = req.params;
+    const studentId = req.user.id;
+    
+    // Check if user is a student
+    if (req.user.role !== 'Student') {
+      return res.status(403).json({ message: 'Only students can submit assignments' });
+    }
+    
+    if (!req.file) {
+      return res.status(400).json({ message: 'Submission file is required' });
+    }
+
+    // Check if assignment exists
+    const [assignment] = await db.execute(
+      'SELECT * FROM Assignments WHERE id = ?',
+      [assignmentId]
+    );
+    
+    if (assignment.length === 0) {
+      return res.status(404).json({ message: 'Assignment not found' });
+    }
+    
+    // Check if student is eligible (same grade and stream)
+    const [student] = await db.execute(
+      'SELECT grade, stream_id FROM Users WHERE id = ? AND role = "Student"',
+      [studentId]
+    );
+    
+    if (student.length === 0) {
+      return res.status(403).json({ message: 'Student not found' });
+    }
+    
+    const assignmentData = assignment[0];
+    const studentData = student[0];
+    
+    if (assignmentData.grade !== studentData.grade || assignmentData.stream_id !== studentData.stream_id) {
+      return res.status(403).json({ message: 'Not eligible for this assignment' });
+    }
+    
+    // Check if already submitted
+    const [existing] = await db.execute(
+      'SELECT id FROM AssignmentSubmissions WHERE assignment_id = ? AND student_id = ?',
+      [assignmentId, studentId]
+    );
+    
+    if (existing.length > 0) {
+      return res.status(400).json({ message: 'Assignment already submitted' });
+    }
+    
+    // Insert submission
+    await db.execute(
+      'INSERT INTO AssignmentSubmissions (assignment_id, student_id, file_path) VALUES (?, ?, ?)',
+      [assignmentId, studentId, req.file.path]
+    );
+    
     res.json({ message: 'Assignment submitted successfully' });
   } catch (error) {
+    console.error('Assignment submission error:', error);
     res.status(500).json({ message: 'Error submitting assignment', error: error.message });
   }
 });
@@ -132,7 +215,7 @@ router.get('/teacher', authenticateToken, authorizeRoles('Teacher'), async (req,
       JOIN Subjects s ON a.subject_id = s.id
       LEFT JOIN AssignmentSubmissions asub ON a.id = asub.assignment_id
       WHERE a.created_by = ?
-      GROUP BY a.id
+      GROUP BY a.id, a.title, a.description, a.due_date, a.created_at, s.name
       ORDER BY a.created_at DESC
     `, [teacherId]);
     
@@ -189,13 +272,40 @@ router.put('/grade/:submissionId', authenticateToken, authorizeRoles('Teacher'),
     }
     
     await db.execute(
-      'UPDATE AssignmentSubmissions SET grade_received = ?, feedback = ? WHERE id = ?',
-      [grade, feedback, submissionId]
+      'UPDATE AssignmentSubmissions SET grade_received = ?, feedback = ?, graded_at = NOW(), graded_by = ? WHERE id = ?',
+      [grade, feedback, teacherId, submissionId]
     );
     
     res.json({ message: 'Assignment graded successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Error grading assignment', error: error.message });
+  }
+});
+
+// Get student's grades for all assignments
+router.get('/student/grades', authenticateToken, async (req, res) => {
+  try {
+    const studentId = req.user.id;
+    
+    const [grades] = await db.execute(`
+      SELECT 
+        a.title as assignment_title,
+        s.name as subject_name,
+        asub.grade_received,
+        asub.feedback,
+        asub.submitted_at,
+        asub.graded_at,
+        a.max_marks
+      FROM AssignmentSubmissions asub
+      JOIN Assignments a ON asub.assignment_id = a.id
+      JOIN Subjects s ON a.subject_id = s.id
+      WHERE asub.student_id = ? AND asub.grade_received IS NOT NULL
+      ORDER BY asub.graded_at DESC
+    `, [studentId]);
+    
+    res.json(grades);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching grades', error: error.message });
   }
 });
 

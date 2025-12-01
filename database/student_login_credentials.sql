@@ -1,0 +1,109 @@
+-- Student login credentials for all students in update_students_complete.sql
+-- All students have password: "password"
+
+USE edubridgedb;
+
+-- Science Stream Students (Grade 11)
+-- Username: newstudent123, Password: password
+-- Username: student1, Password: password
+-- Username: student2, Password: password
+-- Username: student3, Password: password
+-- Username: student4, Password: password
+-- Username: student5, Password: password
+-- Username: student6, Password: password
+-- Username: student7, Password: password
+-- Username: student8, Password: password
+-- Username: student9, Password: password
+-- Username: student10, Password: password
+-- Username: student11, Password: password
+-- Username: student12, Password: password
+-- Username: student13, Password: password
+-- Username: student14, Password: password
+-- Username: student15, Password: password
+
+-- Science Stream Students (Grade 12)
+-- Username: student16, Password: student123
+-- Username: student17, Password: student123
+-- Username: student18, Password: student123
+-- Username: student19, Password: student123
+-- Username: student20, Password: student123
+-- Username: student21, Password: student123
+-- Username: student22, Password: student123
+-- Username: student23, Password: student123
+-- Username: student24, Password: student123
+-- Username: student25, Password: student123
+-- Username: student26, Password: student123
+-- Username: student27, Password: student123
+-- Username: student28, Password: student123
+-- Username: student29, Password: student123
+-- Username: student30, Password: student123
+-- Username: student63, Password: student123
+
+-- Commerce Stream Students (Grade 11)
+-- Username: student31, Password: student123
+-- Username: student32, Password: student123
+-- Username: student33, Password: student123
+-- Username: student34, Password: student123
+-- Username: student35, Password: student123
+-- Username: student36, Password: student123
+-- Username: student37, Password: student123
+-- Username: student38, Password: student123
+-- Username: student39, Password: student123
+-- Username: student40, Password: student123
+-- Username: student41, Password: student123
+-- Username: student42, Password: student123
+-- Username: student43, Password: student123
+-- Username: student44, Password: student123
+-- Username: student45, Password: student123
+
+-- Commerce Stream Students (Grade 12)
+-- Username: student46, Password: student123
+-- Username: student47, Password: student123
+-- Username: student48, Password: student123
+-- Username: student49, Password: student123
+-- Username: student50, Password: student123
+-- Username: student51, Password: student123
+-- Username: student52, Password: student123
+-- Username: student53, Password: student123
+-- Username: student54, Password: student123
+-- Username: student55, Password: student123
+-- Username: student56, Password: student123
+-- Username: student57, Password: student123
+-- Username: student58, Password: student123
+-- Username: student59, Password: student123
+-- Username: student60, Password: student123
+-- Username: student62, Password: student123
+
+-- Arts Stream Students (Grade 11)
+-- Username: student61, Password: student123
+-- Username: student64, Password: student123
+-- Username: student65, Password: student123
+-- Username: student66, Password: student123
+-- Username: student67, Password: student123
+-- Username: student68, Password: student123
+-- Username: student69, Password: student123
+-- Username: student70, Password: student123
+-- Username: student71, Password: student123
+-- Username: student72, Password: student123
+-- Username: student73, Password: student123
+-- Username: student74, Password: student123
+-- Username: student75, Password: student123
+
+-- Arts Stream Students (Grade 12)
+-- Username: student76, Password: student123
+-- Username: student77, Password: student123
+-- Username: student78, Password: student123
+-- Username: student79, Password: student123
+-- Username: student80, Password: student123
+-- Username: student81, Password: student123
+-- Username: student82, Password: student123
+-- Username: student83, Password: student123
+-- Username: student84, Password: student123
+-- Username: student85, Password: student123
+-- Username: student86, Password: student123
+-- Username: student87, Password: student123
+-- Username: student88, Password: student123
+-- Username: student89, Password: student123
+-- Username: student90, Password: student123
+
+SELECT 'All student login credentials listed above. Password for all students: password' as message;

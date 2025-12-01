@@ -6,126 +6,54 @@ const db = require('../config/database');
 // AI-like response generator for educational content
 class EduBridgeAI {
   constructor() {
-    this.context = {
-      platform: 'eduBridge',
-      purpose: 'Rural education platform for 11th and 12th standard students',
-      streams: ['Science', 'Commerce', 'Arts'],
-      subjects: {
-        Science: ['Physics', 'Chemistry', 'Biology', 'Mathematics', 'Computer Science'],
-        Commerce: ['Accountancy', 'Business Studies', 'Economics', 'Mathematics', 'English'],
-        Arts: ['History', 'Political Science', 'Geography', 'Sociology', 'Literature']
-      }
-    };
-    
     this.conversationHistory = new Map();
   }
 
   async generateResponse(message, userId, userRole, userInfo = {}) {
-    const userHistory = this.conversationHistory.get(userId) || [];
-    const response = await this.processMessage(message.toLowerCase(), userRole, userHistory, userId, userInfo);
-    
-    // Update conversation history
-    userHistory.push({ message, response, timestamp: new Date() });
-    if (userHistory.length > 10) userHistory.shift(); // Keep last 10 exchanges
-    this.conversationHistory.set(userId, userHistory);
-    
-    return response;
-  }
-
-  async processMessage(message, userRole, history, userId, userInfo) {
-    // Data queries (quiz marks, assignments, progress)
     if (this.isDataQuery(message)) {
       return await this.handleDataQuery(message, userRole, userId, userInfo);
     }
-    
-    // Educational content queries
-    if (this.isEducationalQuery(message)) {
-      return this.handleEducationalQuery(message, userRole);
-    }
-    
-    // Platform navigation and features
-    if (this.isNavigationQuery(message)) {
-      return this.handleNavigationQuery(message, userRole);
-    }
-    
-    // Study help and explanations
-    if (this.isStudyHelpQuery(message)) {
-      return this.handleStudyHelpQuery(message, userRole);
-    }
-    
-    // General conversation
-    if (this.isGreeting(message)) {
-      return this.handleGreeting(userRole);
-    }
-    
-    // Problem solving
-    if (this.isProblemSolvingQuery(message)) {
-      return this.handleProblemSolving(message, userRole);
-    }
-    
-    // Default intelligent response
-    return this.generateContextualResponse(message, userRole, history);
+    return this.getAcademicResponse(message);
   }
 
-  isEducationalQuery(message) {
-    const eduKeywords = ['explain', 'what is', 'how does', 'define', 'concept', 'theory', 'formula', 'solve', 'calculate'];
-    return eduKeywords.some(keyword => message.includes(keyword));
+  getAcademicResponse(message) {
+    const msg = message.toLowerCase();
+    
+    if (msg.includes('hello') || msg.includes('hi')) {
+      return "Hello! Ask me about your studies - physics, chemistry, biology, math, or check your progress.";
+    }
+    
+    if (msg.includes('physics')) {
+      return "Physics topics: Motion (F=ma), Energy (KE=½mv²), Waves, Electricity. What do you need help with?";
+    }
+    
+    if (msg.includes('chemistry')) {
+      return "Chemistry topics: Atomic structure, Periodic table, Chemical bonding, Reactions. What would you like to know?";
+    }
+    
+    if (msg.includes('biology')) {
+      return "Biology topics: Cell structure, DNA/Genetics, Evolution, Ecology. Which topic interests you?";
+    }
+    
+    if (msg.includes('math')) {
+      return "Math topics: Algebra, Calculus (derivatives/integrals), Geometry, Trigonometry. What do you need help with?";
+    }
+    
+    if (msg.includes('study') || msg.includes('exam')) {
+      return "Study tips: Make a schedule, practice regularly, take breaks, use active recall. Which subject are you preparing for?";
+    }
+    
+    return "I can help with: Physics, Chemistry, Biology, Math, Study tips, or show your quiz scores/progress. What do you need?";
   }
 
-  isNavigationQuery(message) {
-    const navKeywords = ['how to', 'where is', 'find', 'access', 'navigate', 'menu', 'dashboard', 'materials', 'quiz'];
-    return navKeywords.some(keyword => message.includes(keyword));
-  }
 
-  isStudyHelpQuery(message) {
-    const studyKeywords = ['study', 'learn', 'understand', 'help with', 'practice', 'exam', 'test', 'preparation'];
-    return studyKeywords.some(keyword => message.includes(keyword));
-  }
-
-  isGreeting(message) {
-    const greetings = ['hello', 'hi', 'hey', 'good morning', 'good afternoon', 'good evening'];
-    return greetings.some(greeting => message.includes(greeting));
-  }
-
-  isProblemSolvingQuery(message) {
-    const problemKeywords = ['problem', 'question', 'doubt', 'confused', 'stuck', 'difficulty'];
-    return problemKeywords.some(keyword => message.includes(keyword));
-  }
 
   isDataQuery(message) {
     const dataKeywords = ['quiz marks', 'quiz scores', 'my marks', 'my scores', 'assignments', 'my assignments', 'progress', 'my progress', 'performance', 'results', 'grades', 'submissions'];
     return dataKeywords.some(keyword => message.includes(keyword));
   }
 
-  handleEducationalQuery(message, userRole) {
-    // Subject-specific responses
-    if (message.includes('physics')) {
-      return this.getPhysicsResponse(message);
-    }
-    if (message.includes('chemistry')) {
-      return this.getChemistryResponse(message);
-    }
-    if (message.includes('biology')) {
-      return this.getBiologyResponse(message);
-    }
-    if (message.includes('mathematics') || message.includes('math')) {
-      return this.getMathResponse(message);
-    }
-    if (message.includes('computer science') || message.includes('programming')) {
-      return this.getComputerScienceResponse(message);
-    }
-    if (message.includes('accountancy')) {
-      return this.getAccountancyResponse(message);
-    }
-    if (message.includes('economics')) {
-      return this.getEconomicsResponse(message);
-    }
-    if (message.includes('history')) {
-      return this.getHistoryResponse(message);
-    }
-    
-    return "I'd be happy to help explain that concept! Could you specify which subject you're asking about? I can provide detailed explanations for all subjects in Science, Commerce, and Arts streams.";
-  }
+
 
   handleNavigationQuery(message, userRole) {
     if (message.includes('quiz')) {

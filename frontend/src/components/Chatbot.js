@@ -29,7 +29,7 @@ const Chatbot = () => {
   const simulateTyping = (text, callback) => {
     setIsTyping(true);
     // Faster typing simulation
-    const typingDelay = Math.min(text.length * 5, 800);
+    const typingDelay = 100;
     setTimeout(() => {
       setIsTyping(false);
       callback();
@@ -52,7 +52,7 @@ const Chatbot = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.post('/api/chatbot/chat', 
+      const response = await axios.post('http://localhost:5000/api/chatbot/chat', 
         { message: currentInput },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -63,9 +63,7 @@ const Chatbot = () => {
         timestamp: new Date(response.data.timestamp)
       };
 
-      simulateTyping(botResponse.text, () => {
-        setMessages(prev => [...prev, botResponse]);
-      });
+      setMessages(prev => [...prev, botResponse]);
 
     } catch (error) {
       console.error('Chat error:', error);
@@ -91,7 +89,7 @@ const Chatbot = () => {
   const clearHistory = async () => {
     try {
       const token = localStorage.getItem('token');
-      await axios.delete('/api/chatbot/history', {
+      await axios.delete('http://localhost:5000/api/chatbot/history', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setMessages([
@@ -171,21 +169,38 @@ const Chatbot = () => {
             fontSize: '16px'
           }}>
             <span>🤖 AI Study Assistant</span>
-            <button
-              onClick={clearHistory}
-              style={{
-                background: 'rgba(255,255,255,0.2)',
-                border: 'none',
-                color: 'white',
-                borderRadius: '6px',
-                padding: '4px 8px',
-                cursor: 'pointer',
-                fontSize: '12px'
-              }}
-              title="Clear conversation"
-            >
-              🗑️
-            </button>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                onClick={clearHistory}
+                style={{
+                  background: 'rgba(255,255,255,0.2)',
+                  border: 'none',
+                  color: 'white',
+                  borderRadius: '6px',
+                  padding: '4px 8px',
+                  cursor: 'pointer',
+                  fontSize: '12px'
+                }}
+                title="Clear conversation"
+              >
+                🗑️
+              </button>
+              <button
+                onClick={() => setIsOpen(false)}
+                style={{
+                  background: 'rgba(255,255,255,0.2)',
+                  border: 'none',
+                  color: 'white',
+                  borderRadius: '6px',
+                  padding: '4px 8px',
+                  cursor: 'pointer',
+                  fontSize: '12px'
+                }}
+                title="End chat"
+              >
+                ✕
+              </button>
+            </div>
           </div>
 
           {/* Messages */}
@@ -239,7 +254,7 @@ const Chatbot = () => {
             ))}
             
             {/* Typing indicator */}
-            {(isTyping || isLoading) && (
+            {isLoading && (
               <div style={{
                 alignSelf: 'flex-start',
                 background: 'white',
@@ -250,33 +265,7 @@ const Chatbot = () => {
                 alignItems: 'center',
                 gap: '8px'
               }}>
-                <div style={{
-                  display: 'flex',
-                  gap: '4px'
-                }}>
-                  <div style={{
-                    width: '8px',
-                    height: '8px',
-                    borderRadius: '50%',
-                    background: '#667eea',
-                    animation: 'bounce 1.4s infinite ease-in-out'
-                  }} />
-                  <div style={{
-                    width: '8px',
-                    height: '8px',
-                    borderRadius: '50%',
-                    background: '#667eea',
-                    animation: 'bounce 1.4s infinite ease-in-out 0.16s'
-                  }} />
-                  <div style={{
-                    width: '8px',
-                    height: '8px',
-                    borderRadius: '50%',
-                    background: '#667eea',
-                    animation: 'bounce 1.4s infinite ease-in-out 0.32s'
-                  }} />
-                </div>
-                <span style={{ fontSize: '12px', color: '#666' }}>AI is thinking...</span>
+                <span style={{ fontSize: '12px', color: '#666' }}>Thinking...</span>
               </div>
             )}
             

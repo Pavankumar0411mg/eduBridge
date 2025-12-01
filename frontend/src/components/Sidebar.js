@@ -18,6 +18,7 @@ const Sidebar = ({ user, onLogout, onToggle }) => {
       { icon: '📚', label: 'Study Materials', path: '/materials' },
       { icon: '📝', label: 'Take Quizzes', path: '/quizzes' },
       { icon: '📋', label: 'Assignments', path: '/assignments' },
+      { icon: '🎯', label: 'My Grades', path: '/assignment-grades' },
       { icon: '💬', label: 'Discussion Forum', path: '/discussions' },
       { icon: '📈', label: 'My Progress', path: '/my-progress' },
       { icon: '⚙️', label: 'Settings', path: '/settings' }
