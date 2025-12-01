@@ -99,7 +99,7 @@ A comprehensive full-stack web application designed to enhance education in rura
    ```
 
 5. **Access Application**
-   - Frontend: http://localhost:3000
+   - Frontend: https://edubridge-rural-aqjli9r7j-pavan-kumar-m-gs-projects.vercel.app
    - Backend API: http://localhost:5000
 
 ### Default Admin Login
