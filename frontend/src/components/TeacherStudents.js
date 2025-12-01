@@ -13,7 +13,7 @@ const TeacherStudents = () => {
     const fetchStudents = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get('/api/teacher/students', {
+            const response = await axios.get('http://localhost:5000/api/teachers/my-students', {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setStudents(response.data);
@@ -34,7 +34,7 @@ const TeacherStudents = () => {
                     <div key={student.id} className="student-card">
                         <h3>{student.full_name}</h3>
                         <p>Grade: {student.grade}</p>
-                        <p>Stream: {student.stream}</p>
+                        <p>Stream: {student.stream_name}</p>
                         <p>Email: {student.email}</p>
                         <p>Enrolled: {new Date(student.enrolled_date).toLocaleDateString()}</p>
                     </div>

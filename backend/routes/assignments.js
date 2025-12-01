@@ -37,11 +37,17 @@ router.post('/create', authenticateToken, authorizeRoles('Teacher'), upload.sing
     const { title, description, due_date } = req.body;
     const teacherId = req.user.id;
     
+    console.log('Assignment creation request:', { title, description, due_date, teacherId, file: req.file?.filename });
+    
+    if (!title || !description) {
+      return res.status(400).json({ message: 'Title and description are required' });
+    }
+    
     if (!req.file) {
       return res.status(400).json({ message: 'Assignment file is required' });
     }
 
-    // Get teacher's stream, grade, and subject
+    // Get teacher's stream and grade
     const [teacher] = await db.execute(
       'SELECT stream_id, grade, username FROM Users WHERE id = ? AND role = "Teacher"',
       [teacherId]
@@ -58,26 +64,36 @@ router.post('/create', authenticateToken, authorizeRoles('Teacher'), upload.sing
     if (username.includes('physics')) subject_id = 1;
     else if (username.includes('chemistry')) subject_id = 2;
     else if (username.includes('biology')) subject_id = 3;
-    else if (username.includes('math')) subject_id = 4;
+    else if (username.includes('math_science')) subject_id = 4;
     else if (username.includes('cs')) subject_id = 5;
     else if (username.includes('accounts')) subject_id = 6;
     else if (username.includes('business')) subject_id = 7;
     else if (username.includes('economics')) subject_id = 8;
+    else if (username.includes('math_commerce')) subject_id = 9;
     else if (username.includes('english')) subject_id = 10;
     else if (username.includes('history')) subject_id = 11;
     else if (username.includes('polsci')) subject_id = 12;
     else if (username.includes('geography')) subject_id = 13;
     else if (username.includes('sociology')) subject_id = 14;
     else if (username.includes('literature')) subject_id = 15;
+    
+    // Ensure we have valid stream_id and grade
+    if (!stream_id || !grade) {
+      return res.status(400).json({ message: 'Teacher must have stream and grade assigned' });
+    }
 
     // Create assignment
+    console.log('Creating assignment with data:', { title, description, file_path: req.file.path, grade, stream_id, subject_id, teacherId, due_date });
+    
     const [result] = await db.execute(
       'INSERT INTO Assignments (title, description, file_path, grade, stream_id, subject_id, created_by, due_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
       [title, description, req.file.path, grade, stream_id, subject_id, teacherId, due_date]
     );
     
+    console.log('Assignment created successfully:', result.insertId);
     res.status(201).json({ message: 'Assignment created successfully', assignmentId: result.insertId });
   } catch (error) {
+    console.error('Assignment creation error:', error);
     res.status(500).json({ message: 'Error creating assignment', error: error.message });
   }
 });
@@ -96,20 +112,28 @@ router.get('/test', authenticateToken, async (req, res) => {
 router.get('/student', authenticateToken, async (req, res) => {
   try {
     const studentId = req.user.id;
+    console.log('Student assignments request for user:', studentId);
+    
     const [student] = await db.execute('SELECT grade, stream_id FROM Users WHERE id = ?', [studentId]);
     if (student.length === 0) {
+      console.log('Student not found');
       return res.json([]);
     }
     
     const { grade, stream_id } = student[0];
+    console.log('Student data:', { grade, stream_id });
+    
     const [assignments] = await db.execute(`
       SELECT 
-        a.*,
+        a.id,
+        a.title,
+        a.description,
+        a.file_path,
+        a.due_date,
+        a.created_at,
         s.name as subject_name,
         asub.id as submission_id,
-        asub.submitted_at,
-        asub.grade_received,
-        asub.feedback
+        asub.submitted_at
       FROM Assignments a
       JOIN Subjects s ON a.subject_id = s.id
       LEFT JOIN AssignmentSubmissions asub ON a.id = asub.assignment_id AND asub.student_id = ?
@@ -117,8 +141,10 @@ router.get('/student', authenticateToken, async (req, res) => {
       ORDER BY a.created_at DESC
     `, [studentId, grade, stream_id]);
     
+    console.log('Assignments found:', assignments.length);
     res.json(assignments);
   } catch (error) {
+    console.error('Student assignments error:', error);
     res.status(500).json({ message: 'Error fetching assignments', error: error.message });
   }
 });
@@ -279,6 +305,42 @@ router.put('/grade/:submissionId', authenticateToken, authorizeRoles('Teacher'),
     res.json({ message: 'Assignment graded successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Error grading assignment', error: error.message });
+  }
+});
+
+// Delete assignment (Teacher only)
+router.delete('/delete/:assignmentId', authenticateToken, authorizeRoles('Teacher'), async (req, res) => {
+  try {
+    const { assignmentId } = req.params;
+    const teacherId = req.user.id;
+    
+    console.log('Delete request:', { assignmentId, teacherId });
+    
+    // First check if assignment exists at all
+    const [assignmentExists] = await db.execute('SELECT id, created_by FROM Assignments WHERE id = ?', [assignmentId]);
+    console.log('Assignment exists check:', assignmentExists);
+    
+    if (assignmentExists.length === 0) {
+      return res.status(404).json({ message: 'Assignment not found' });
+    }
+    
+    // Check if teacher owns this assignment
+    if (assignmentExists[0].created_by !== teacherId) {
+      return res.status(403).json({ message: 'Access denied - you can only delete your own assignments' });
+    }
+    
+    // Delete related submissions first
+    const [deleteSubmissions] = await db.execute('DELETE FROM AssignmentSubmissions WHERE assignment_id = ?', [assignmentId]);
+    console.log('Deleted submissions:', deleteSubmissions);
+    
+    // Delete assignment
+    const [deleteResult] = await db.execute('DELETE FROM Assignments WHERE id = ?', [assignmentId]);
+    console.log('Delete result:', deleteResult);
+    
+    res.json({ message: 'Assignment deleted successfully' });
+  } catch (error) {
+    console.error('Delete assignment error:', error);
+    res.status(500).json({ message: 'Error deleting assignment', error: error.message });
   }
 });
 

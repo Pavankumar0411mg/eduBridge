@@ -130,7 +130,7 @@ const Chatbot = () => {
           justifyContent: 'center',
           cursor: 'pointer',
           boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
-          zIndex: 1000,
+          zIndex: 9999,
           color: 'white',
           fontSize: '24px',
           transition: 'all 0.3s ease',
@@ -151,7 +151,7 @@ const Chatbot = () => {
           background: 'white',
           borderRadius: '16px',
           boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-          zIndex: 1000,
+          zIndex: 9998,
           display: 'flex',
           flexDirection: 'column',
           animation: 'slideUp 0.3s ease-out'

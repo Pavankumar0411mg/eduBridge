@@ -7,6 +7,7 @@ const authRoutes = require('./routes/auth');
 const materialsRoutes = require('./routes/materials');
 const streamsRoutes = require('./routes/streams');
 const quizzesRoutes = require('./routes/quizzes');
+const quizRoutes = require('./routes/quiz_fixed');
 const usersRoutes = require('./routes/users');
 const adminRoutes = require('./routes/admin');
 const teacherRoutes = require('./routes/teachers');
@@ -16,6 +17,7 @@ const discussionRoutes = require('./routes/discussions');
 const progressRoutes = require('./routes/progress');
 const assignmentRoutes = require('./routes/assignments');
 const chatbotRoutes = require('./routes/chatbot');
+const notificationRoutes = require('./routes/notifications');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -30,6 +32,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/materials', materialsRoutes);
 app.use('/api/streams', streamsRoutes);
 app.use('/api/quizzes', quizzesRoutes);
+app.use('/api/quiz', quizRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/teachers', teacherRoutes);
@@ -39,6 +42,7 @@ app.use('/api/discussions', discussionRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/assignments', assignmentRoutes);
 app.use('/api/chatbot', chatbotRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

@@ -24,7 +24,7 @@ const UploadMaterial = ({ user }) => {
     } else {
       fetchStreams();
     }
-  }, []);
+  }, [user.role]);
 
   useEffect(() => {
     if (formData.stream_id) {
@@ -44,16 +44,67 @@ const UploadMaterial = ({ user }) => {
   const fetchTeacherSubjects = async () => {
     try {
       const token = localStorage.getItem('token');
+      
+      // Get teacher's auto-populate data
+      const teacherDataResponse = await axios.get('/api/materials/teacher-data', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      const teacherData = teacherDataResponse.data;
+      
+      // Get teacher subjects for grade options
       const response = await axios.get('/api/materials/teacher-subjects', {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setTeacherSubjects(response.data);
+      setTeacherSubjects(response.data.subjects || response.data);
       
-      // Set unique streams and grades for teacher
-      const uniqueStreams = [...new Set(response.data.map(item => ({ id: item.stream_id, name: item.stream_name })))];
-      setStreams(uniqueStreams);
+      // Auto-populate form with teacher's data
+      const autoFormData = {
+        title: '',
+        type: 'PDF',
+        grade: 11, // Default to grade 11
+        stream_id: teacherData.stream_id,
+        subject_id: teacherData.subject_id,
+        language: 'English'
+      };
+      
+      setFormData(autoFormData);
+      
+      // Set streams and subjects for display
+      setStreams([{ id: teacherData.stream_id, name: teacherData.stream_name }]);
+      setSubjects([{ id: teacherData.subject_id, name: teacherData.subject_name }]);
+      
     } catch (error) {
-      console.error('Error fetching teacher subjects:', error);
+      console.error('Error fetching teacher data:', error);
+      // Fallback to old method if new endpoint fails
+      try {
+        const token = localStorage.getItem('token');
+        const response = await axios.get('/api/materials/teacher-subjects', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setTeacherSubjects(response.data.subjects || response.data);
+        
+        const subjects = response.data.subjects || response.data;
+        if (subjects.length > 0) {
+          const uniqueStreams = [...new Set(subjects.map(item => ({ id: item.stream_id, name: item.stream_name })))];
+          setStreams(uniqueStreams);
+          
+          if (uniqueStreams.length === 1) {
+            const streamSubjects = subjects
+              .filter(item => item.stream_id === uniqueStreams[0].id)
+              .map(item => ({ id: item.subject_id, name: item.subject_name }));
+            setSubjects(streamSubjects);
+            
+            setFormData(prev => ({
+              ...prev,
+              stream_id: uniqueStreams[0].id,
+              subject_id: streamSubjects.length === 1 ? streamSubjects[0].id : ''
+            }));
+          }
+        }
+      } catch (fallbackError) {
+        console.error('Fallback error:', fallbackError);
+      }
     }
   };
 
@@ -78,11 +129,28 @@ const UploadMaterial = ({ user }) => {
   };
 
   const handleChange = (e) => {
-    setFormData({
+    const newFormData = {
       ...formData,
       [e.target.name]: e.target.value,
       ...(e.target.name === 'stream_id' && { subject_id: '' })
-    });
+    };
+    
+    setFormData(newFormData);
+    
+    // Auto-select subject if only one available for selected stream
+    if (e.target.name === 'stream_id' && user.role === 'Teacher') {
+      const streamSubjects = teacherSubjects
+        .filter(item => item.stream_id == e.target.value)
+        .map(item => ({ id: item.subject_id, name: item.subject_name }));
+      
+      if (streamSubjects.length === 1) {
+        setFormData(prev => ({
+          ...prev,
+          stream_id: e.target.value,
+          subject_id: streamSubjects[0].id
+        }));
+      }
+    }
   };
 
   const handleFileChange = (e) => {
@@ -118,14 +186,27 @@ const UploadMaterial = ({ user }) => {
       });
       
       setMessage('Material uploaded successfully!');
-      setFormData({
-        title: '',
-        type: 'PDF',
-        grade: 11,
-        stream_id: '',
-        subject_id: '',
-        language: 'English'
-      });
+      
+      // Reset form but keep auto-populated values for teachers
+      if (user.role === 'Teacher') {
+        setFormData(prev => ({
+          ...prev,
+          title: '',
+          type: 'PDF',
+          language: 'English'
+          // Keep stream_id, subject_id, and grade as they are auto-populated
+        }));
+      } else {
+        setFormData({
+          title: '',
+          type: 'PDF',
+          grade: 11,
+          stream_id: '',
+          subject_id: '',
+          language: 'English'
+        });
+      }
+      
       setFile(null);
       document.getElementById('fileInput').value = '';
     } catch (error) {
@@ -179,13 +260,14 @@ const UploadMaterial = ({ user }) => {
           </div>
 
           <div className="form-group">
-            <label>Grade</label>
+            <label>Grade {user.role === 'Teacher' && <span style={{color: '#28a745', fontSize: '12px'}}>(Can be changed)</span>}</label>
             <select name="grade" value={formData.grade} onChange={handleChange}>
               {user.role === 'Teacher' ? (
-                // Show only grades teacher is assigned to
-                [...new Set(teacherSubjects.map(item => item.grade))].map(grade => (
-                  <option key={grade} value={grade}>Grade {grade}</option>
-                ))
+                // Teachers can upload for both grades
+                <>
+                  <option value={11}>Grade 11</option>
+                  <option value={12}>Grade 12</option>
+                </>
               ) : (
                 // Admin can select any grade
                 <>
@@ -197,9 +279,8 @@ const UploadMaterial = ({ user }) => {
           </div>
 
           <div className="form-group">
-            <label>Stream</label>
-            <select name="stream_id" value={formData.stream_id} onChange={handleChange} required>
-              <option value="">Select Stream</option>
+            <label>Stream {user.role === 'Teacher' && <span style={{color: '#28a745', fontSize: '12px'}}>(Auto-populated from your profile)</span>}</label>
+            <select name="stream_id" value={formData.stream_id} onChange={handleChange} required disabled={user.role === 'Teacher'}>
               {streams.map(stream => (
                 <option key={stream.id} value={stream.id}>{stream.name}</option>
               ))}
@@ -207,9 +288,8 @@ const UploadMaterial = ({ user }) => {
           </div>
 
           <div className="form-group">
-            <label>Subject</label>
-            <select name="subject_id" value={formData.subject_id} onChange={handleChange} required>
-              <option value="">Select Subject</option>
+            <label>Subject {user.role === 'Teacher' && <span style={{color: '#28a745', fontSize: '12px'}}>(Auto-populated from your profile)</span>}</label>
+            <select name="subject_id" value={formData.subject_id} onChange={handleChange} required disabled={user.role === 'Teacher'}>
               {subjects.map(subject => (
                 <option key={subject.id} value={subject.id}>{subject.name}</option>
               ))}

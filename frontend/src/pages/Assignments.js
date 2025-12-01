@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import BackButton from '../components/BackButton';
+import config from '../config';
 
 const Assignments = ({ user }) => {
   const [assignments, setAssignments] = useState([]);
@@ -18,8 +19,8 @@ const Assignments = ({ user }) => {
     try {
       const token = localStorage.getItem('token');
       const endpoint = user.role === 'Teacher' 
-        ? 'http://localhost:5000/api/assignments/teacher' 
-        : 'http://localhost:5000/api/assignments/student';
+        ? `${config.API_URL}/assignments/teacher` 
+        : `${config.API_URL}/assignments/student`;
       
       const response = await axios.get(endpoint, {
         headers: { Authorization: `Bearer ${token}` }
@@ -47,7 +48,7 @@ const Assignments = ({ user }) => {
       const formData = new FormData();
       formData.append('submissionFile', submissionFile[assignmentId]);
 
-      const response = await axios.post(`http://localhost:5000/api/assignments/submit/${assignmentId}`, formData, {
+      const response = await axios.post(`${config.API_URL}/assignments/submit/${assignmentId}`, formData, {
         headers: { 
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
@@ -66,7 +67,7 @@ const Assignments = ({ user }) => {
   const viewSubmissions = async (assignmentId) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`http://localhost:5000/api/assignments/${assignmentId}/submissions`, {
+      const response = await axios.get(`${config.API_URL}/assignments/${assignmentId}/submissions`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setSubmissions(response.data);
@@ -83,7 +84,7 @@ const Assignments = ({ user }) => {
       const token = localStorage.getItem('token');
       const { grade, feedback } = grading[submissionId] || {};
       
-      await axios.put(`http://localhost:5000/api/assignments/grade/${submissionId}`, { grade, feedback }, {
+      await axios.put(`${config.API_URL}/assignments/grade/${submissionId}`, { grade, feedback }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -102,6 +103,30 @@ const Assignments = ({ user }) => {
         [field]: value
       }
     });
+  };
+
+  const deleteAssignment = async (assignmentId) => {
+    if (!window.confirm('Are you sure you want to delete this assignment? This will also delete all submissions.')) {
+      return;
+    }
+    
+    try {
+      const token = localStorage.getItem('token');
+      console.log('Deleting assignment:', assignmentId);
+      
+      const response = await axios.delete(`${config.API_URL}/assignments/delete/${assignmentId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 10000
+      });
+      
+      console.log('Delete response:', response.data);
+      alert('Assignment deleted successfully!');
+      fetchAssignments();
+    } catch (error) {
+      console.error('Delete error:', error);
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || error.message || 'Network error';
+      alert('Error deleting assignment: ' + errorMessage);
+    }
   };
 
   const formatDate = (dateString) => {
@@ -146,7 +171,7 @@ const Assignments = ({ user }) => {
 
                 <div className="material-actions">
                   <a 
-                    href={`http://localhost:5000/${submission.file_path}`}
+                    href={`${config.API_URL.replace('/api', '')}/${submission.file_path}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="btn btn-primary"
@@ -236,7 +261,7 @@ const Assignments = ({ user }) => {
 
               <div className="material-actions">
                 <a 
-                  href={`http://localhost:5000/${assignment.file_path}`}
+                  href={`${config.API_URL.replace('/api', '')}/${assignment.file_path}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn btn-primary"
@@ -245,13 +270,30 @@ const Assignments = ({ user }) => {
                 </a>
                 
                 {user.role === 'Teacher' && (
-                  <button
-                    onClick={() => viewSubmissions(assignment.id)}
-                    className="btn btn-secondary"
-                    style={{ marginLeft: '10px' }}
-                  >
-                    View Submissions ({assignment.submissions_count || 0})
-                  </button>
+                  <>
+                    <button
+                      onClick={() => viewSubmissions(assignment.id)}
+                      className="btn btn-secondary"
+                      style={{ marginLeft: '10px' }}
+                    >
+                      View Submissions ({assignment.submissions_count || 0})
+                    </button>
+                    <button
+                      onClick={() => deleteAssignment(assignment.id)}
+                      className="btn"
+                      style={{ 
+                        marginLeft: '10px', 
+                        background: '#dc3545', 
+                        color: 'white',
+                        border: 'none',
+                        padding: '8px 16px',
+                        borderRadius: '6px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      🗑️ Delete
+                    </button>
+                  </>
                 )}
 
                 {user.role === 'Student' && (

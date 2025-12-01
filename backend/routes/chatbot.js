@@ -10,10 +10,34 @@ class EduBridgeAI {
   }
 
   async generateResponse(message, userId, userRole, userInfo = {}) {
+    const msg = message.toLowerCase();
+    
+    // Handle quick suggestions
+    if (msg === 'show my quiz scores') {
+      return await this.getQuizScores(userId, userRole, userInfo);
+    }
+    if (msg === 'my assignments') {
+      return await this.getAssignments(userId, userRole, userInfo);
+    }
+    if (msg === 'study tips') {
+      return this.getStudyTips();
+    }
+    if (msg === 'platform guide') {
+      return this.getPlatformGuide(userRole);
+    }
+    
     if (this.isDataQuery(message)) {
       return await this.handleDataQuery(message, userRole, userId, userInfo);
     }
     return this.getAcademicResponse(message);
+  }
+
+  getStudyTips() {
+    return `📚 **Study Tips for Success:**\n\n**📅 Time Management:**\n• Create a daily study schedule\n• Use Pomodoro Technique (25min study, 5min break)\n• Prioritize difficult subjects when fresh\n\n**🧠 Memory Techniques:**\n• Active recall - test yourself regularly\n• Spaced repetition - review at intervals\n• Create visual mind maps\n• Teach concepts to others\n\n**📖 Effective Study Methods:**\n• Take handwritten notes\n• Practice past papers\n• Form study groups\n• Use platform quizzes for self-assessment\n\n**💡 Exam Preparation:**\n• Start early, don't cram\n• Focus on understanding, not memorizing\n• Take regular breaks\n• Stay hydrated and get enough sleep\n\n**Need subject-specific tips?** Just ask about any subject!`;
+  }
+
+  getPlatformGuide(userRole) {
+    return `🗺️ **eduBridge Platform Guide:**\n\n**🏠 Dashboard:**\n• Quick access to all features\n• Recent activity overview\n• Progress summary\n\n**📚 Study Materials:**\n• PDF notes and textbooks\n• Video lectures\n• Filter by subject/grade/stream\n\n**🎯 Quizzes:**\n• Practice tests for all subjects\n• Instant scoring and feedback\n• Progress tracking\n\n**📝 Assignments:**\n• View and submit assignments\n• Track deadlines\n• Check grades and feedback\n\n**📈 Progress Tracking:**\n• Quiz performance analytics\n• Assignment completion status\n• Overall academic progress\n\n**💬 Discussion Forum:**\n• Ask questions\n• Help classmates\n• Connect with teachers\n\n**⚙️ Settings:**\n• Customize display preferences\n• Notification settings\n• Account management\n\n${userRole === 'Teacher' ? '**👨🏫 Teacher Features:**\n• Upload study materials\n• Create quizzes and assignments\n• Monitor student progress\n• Grade submissions' : ''}\n\n**Need help with a specific feature?** Just ask!`;
   }
 
   getAcademicResponse(message) {

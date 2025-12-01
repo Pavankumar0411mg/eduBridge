@@ -87,19 +87,77 @@ router.delete('/:materialId', authenticateToken, authorizeRoles('Admin'), async 
   }
 });
 
+// Get teacher's auto-populate data
+router.get('/teacher-data', authenticateToken, authorizeRoles('Teacher'), async (req, res) => {
+  try {
+    const teacherId = req.user.id;
+    const [teacher] = await db.execute(`
+      SELECT u.stream_id, u.subject_id, s.name as subject_name, st.name as stream_name
+      FROM Users u
+      LEFT JOIN Subjects s ON u.subject_id = s.id
+      LEFT JOIN Streams st ON u.stream_id = st.id
+      WHERE u.id = ? AND u.role = 'Teacher'
+    `, [teacherId]);
+    
+    if (teacher.length === 0) {
+      return res.status(404).json({ message: 'Teacher data not found' });
+    }
+    
+    res.json({
+      stream_id: teacher[0].stream_id,
+      subject_id: teacher[0].subject_id,
+      stream_name: teacher[0].stream_name,
+      subject_name: teacher[0].subject_name
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching teacher data', error: error.message });
+  }
+});
+
 // Get teacher's assigned subjects
 router.get('/teacher-subjects', authenticateToken, authorizeRoles('Teacher'), async (req, res) => {
   try {
     const teacherId = req.user.id;
-    const [subjects] = await db.execute(`
-      SELECT ts.*, s.name as subject_name, st.name as stream_name
-      FROM TeacherSubjects ts
-      JOIN Subjects s ON ts.subject_id = s.id
-      JOIN Streams st ON ts.stream_id = st.id
-      WHERE ts.teacher_id = ?
+    const [teacher] = await db.execute(`
+      SELECT u.grade, u.stream_id, u.subject_id, s.name as subject_name, st.name as stream_name
+      FROM Users u
+      LEFT JOIN Subjects s ON u.subject_id = s.id
+      LEFT JOIN Streams st ON u.stream_id = st.id
+      WHERE u.id = ? AND u.role = 'Teacher'
     `, [teacherId]);
     
-    res.json(subjects);
+    if (teacher.length === 0) {
+      return res.json({ auto_populate: false, subjects: [] });
+    }
+    
+    // Return teacher info for auto-population and both grades
+    const response = {
+      auto_populate: true,
+      teacher_stream_id: teacher[0].stream_id,
+      teacher_subject_id: teacher[0].subject_id,
+      teacher_stream_name: teacher[0].stream_name,
+      teacher_subject_name: teacher[0].subject_name,
+      subjects: [
+        {
+          teacher_id: teacherId,
+          grade: 11,
+          stream_id: teacher[0].stream_id,
+          subject_id: teacher[0].subject_id,
+          subject_name: teacher[0].subject_name,
+          stream_name: teacher[0].stream_name
+        },
+        {
+          teacher_id: teacherId,
+          grade: 12,
+          stream_id: teacher[0].stream_id,
+          subject_id: teacher[0].subject_id,
+          subject_name: teacher[0].subject_name,
+          stream_name: teacher[0].stream_name
+        }
+      ]
+    };
+    
+    res.json(response);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching teacher subjects', error: error.message });
   }
@@ -108,20 +166,29 @@ router.get('/teacher-subjects', authenticateToken, authorizeRoles('Teacher'), as
 // Upload material
 router.post('/upload', authenticateToken, authorizeRoles('Admin', 'Teacher'), upload.single('file'), async (req, res) => {
   try {
-    const { title, type, grade, stream_id, subject_id, language } = req.body;
+    let { title, type, grade, stream_id, subject_id, language } = req.body;
     const file_path = req.file.path;
     
-    // Check if teacher is authorized for this subject (only for teachers)
+    console.log('Upload request:', { title, type, grade, stream_id, subject_id, user_role: req.user.role, user_id: req.user.id });
+    
+    // Auto-populate stream and subject for teachers
     if (req.user.role === 'Teacher') {
-      const [teacherSubjects] = await db.execute(
-        'SELECT * FROM TeacherSubjects WHERE teacher_id = ? AND subject_id = ? AND grade = ? AND stream_id = ?',
-        [req.user.id, subject_id, grade, stream_id]
+      const [teacher] = await db.execute(
+        'SELECT subject_id, stream_id FROM Users WHERE id = ? AND role = "Teacher"',
+        [req.user.id]
       );
       
-      if (teacherSubjects.length === 0) {
-        return res.status(403).json({ message: 'You are not authorized to upload materials for this subject/grade/stream' });
+      console.log('Teacher data:', teacher);
+      
+      if (teacher.length > 0) {
+        stream_id = teacher[0].stream_id;
+        subject_id = teacher[0].subject_id;
       }
+      
+      if (!grade) grade = 11;
     }
+
+    console.log('Final values:', { grade, stream_id, subject_id });
 
     const [result] = await db.execute(
       'INSERT INTO StudyMaterials (title, type, file_path, uploaded_by, grade, stream_id, subject_id, language) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
@@ -130,6 +197,7 @@ router.post('/upload', authenticateToken, authorizeRoles('Admin', 'Teacher'), up
 
     res.status(201).json({ message: 'Material uploaded successfully', materialId: result.insertId });
   } catch (error) {
+    console.error('Upload error:', error);
     res.status(500).json({ message: 'Upload failed', error: error.message });
   }
 });

@@ -1,4 +1,5 @@
 import React from 'react';
+import NotificationBell from './NotificationBell';
 
 const Header = ({ user, onLogout }) => {
   return (
@@ -12,6 +13,7 @@ const Header = ({ user, onLogout }) => {
           </>
         ) : (
           <>
+            <NotificationBell user={user} />
             <div className="user-details">
               <div className="user-name">{user.full_name}</div>
               <div className="user-role">{user.role}</div>

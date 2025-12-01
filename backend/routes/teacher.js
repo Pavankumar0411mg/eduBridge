@@ -8,7 +8,29 @@ router.get('/students', authenticateToken, authorizeRoles(['Teacher']), async (r
     try {
         const teacherId = req.user.id;
         
-        const [students] = await db.execute(`
+        // Get teacher info first
+        const [teacher] = await db.execute(`
+            SELECT username, stream_id FROM Users WHERE id = ? AND role = 'Teacher'
+        `, [teacherId]);
+        
+        if (!teacher.length) {
+            return res.json([]);
+        }
+        
+        const teacherUsername = teacher[0].username;
+        const teacherStreamId = teacher[0].stream_id;
+        
+        // Determine grade based on teacher username ending
+        let targetGrade;
+        if (teacherUsername.endsWith('1')) {
+            targetGrade = 11;
+        } else if (teacherUsername.endsWith('2')) {
+            targetGrade = 12;
+        } else {
+            targetGrade = null; // Show all grades if no pattern
+        }
+        
+        let query = `
             SELECT 
                 s.id,
                 s.username,
@@ -19,10 +41,19 @@ router.get('/students', authenticateToken, authorizeRoles(['Teacher']), async (r
                 s.created_at as enrolled_date
             FROM Users s
             JOIN Streams st ON s.stream_id = st.id
-            JOIN Users t ON s.stream_id = t.stream_id AND s.grade = t.grade
-            WHERE t.id = ? AND t.role = 'Teacher' AND s.role = 'Student'
-            ORDER BY s.full_name
-        `, [teacherId]);
+            WHERE s.role = 'Student' AND s.stream_id = ?
+        `;
+        
+        let params = [teacherStreamId];
+        
+        if (targetGrade) {
+            query += ` AND s.grade = ?`;
+            params.push(targetGrade);
+        }
+        
+        query += ` ORDER BY s.full_name`;
+        
+        const [students] = await db.execute(query, params);
         
         res.json(students);
     } catch (error) {

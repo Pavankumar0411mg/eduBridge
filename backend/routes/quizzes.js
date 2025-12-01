@@ -138,9 +138,18 @@ router.post('/', authenticateToken, authorizeRoles('Admin', 'Teacher'), async (r
   try {
     const { title, description, grade, stream_id, subject_id, time_limit, questions } = req.body;
     
+    // Validate required fields
+    if (!title || !questions || questions.length === 0) {
+      return res.status(400).json({ message: 'Title and questions are required' });
+    }
+    
+    if (!grade || !stream_id || !subject_id) {
+      return res.status(400).json({ message: 'Grade, stream, and subject are required' });
+    }
+    
     const [quizResult] = await db.execute(
       'INSERT INTO Quizzes (title, description, grade, stream_id, subject_id, created_by, time_limit) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [title, description, grade, stream_id, subject_id, req.user.id, time_limit]
+      [title, description, grade, stream_id, subject_id, req.user.id, time_limit || 60]
     );
 
     const quizId = quizResult.insertId;
@@ -148,18 +157,20 @@ router.post('/', authenticateToken, authorizeRoles('Admin', 'Teacher'), async (r
 
     // Insert questions
     for (const question of questions) {
+      const marks = question.marks || 1;
       await db.execute(
         'INSERT INTO Questions (quiz_id, question_text, option_a, option_b, option_c, option_d, correct_answer, marks) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [quizId, question.question_text, question.option_a, question.option_b, question.option_c, question.option_d, question.correct_answer, question.marks]
+        [quizId, question.question_text, question.option_a, question.option_b, question.option_c, question.option_d, question.correct_answer, marks]
       );
-      totalMarks += question.marks;
+      totalMarks += marks;
     }
 
     // Update total marks
     await db.execute('UPDATE Quizzes SET total_marks = ? WHERE id = ?', [totalMarks, quizId]);
 
-    res.status(201).json({ message: 'Quiz created successfully', quizId });
+    res.status(201).json({ message: 'Quiz created successfully', quizId, total_marks: totalMarks });
   } catch (error) {
+    console.error('Quiz creation error:', error);
     res.status(500).json({ message: 'Quiz creation failed', error: error.message });
   }
 });

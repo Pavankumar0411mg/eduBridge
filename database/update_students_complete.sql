@@ -104,3 +104,6 @@ UPDATE Users SET full_name = 'Manoj Kapoor', email = 'manoj.arts@gmail.com', gra
 UPDATE Users SET full_name = 'Usha Agarwal', email = 'usha.arts@gmail.com', grade = 12, stream_id = 3 WHERE username = 'student88';
 UPDATE Users SET full_name = 'Prakash Mehta', email = 'prakash.arts@gmail.com', grade = 12, stream_id = 3 WHERE username = 'student89';
 UPDATE Users SET full_name = 'Seema Tiwari', email = 'seema.arts@gmail.com', grade = 12, stream_id = 3 WHERE username = 'student90';
+
+-- Set all student passwords to 'password'
+UPDATE Users SET password = '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi' WHERE role = 'student';
