@@ -1,3 +1,4 @@
+
 # eduBridge - Rural Education Platform
 
 ![GitHub repo size](https://img.shields.io/github/repo-size/Pavankumar0411mg/eduBridge)
